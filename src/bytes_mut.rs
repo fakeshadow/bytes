@@ -809,8 +809,15 @@ impl BytesMut {
             return;
         }
 
-        if let Err(other) = self.try_unsplit(other) {
-            self.extend_from_slice(other.as_ref());
+        static SUCCESS: AtomicUsize = AtomicUsize::new(0);
+        static FAIL: AtomicUsize = AtomicUsize::new(0);
+
+        match self.try_unsplit(other) {
+            Ok(_) => std::println!("Successful unsplit count: {}", SUCCESS.fetch_add(1, Ordering::Relaxed) + 1),
+            Err(other) => {
+                std::println!("Failed unsplit count: {}", FAIL.fetch_add(1, Ordering::Relaxed) + 1);
+                self.extend_from_slice(other.as_ref());
+            }
         }
     }
 
