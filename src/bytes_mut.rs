@@ -804,18 +804,28 @@ impl BytesMut {
     /// assert_eq!(b"aaabbbcccddd", &buf[..]);
     /// ```
     pub fn unsplit(&mut self, other: BytesMut) {
+        static SUCCESS: AtomicUsize = AtomicUsize::new(0);
+        static FAIL: AtomicUsize = AtomicUsize::new(0);
+        static REPLACE: AtomicUsize = AtomicUsize::new(0);
+
         if self.is_empty() {
+            std::println!(
+                "Replaced unsplit count: {}",
+                REPLACE.fetch_add(1, Ordering::Relaxed) + 1
+            );
             *self = other;
             return;
         }
-
-        static SUCCESS: AtomicUsize = AtomicUsize::new(0);
-        static FAIL: AtomicUsize = AtomicUsize::new(0);
-
         match self.try_unsplit(other) {
-            Ok(_) => std::println!("Successful unsplit count: {}", SUCCESS.fetch_add(1, Ordering::Relaxed) + 1),
+            Ok(_) => std::println!(
+                "Successful unsplit count: {}",
+                SUCCESS.fetch_add(1, Ordering::Relaxed) + 1
+            ),
             Err(other) => {
-                std::println!("Failed unsplit count: {}", FAIL.fetch_add(1, Ordering::Relaxed) + 1);
+                std::println!(
+                    "Failed unsplit count: {}",
+                    FAIL.fetch_add(1, Ordering::Relaxed) + 1
+                );
                 self.extend_from_slice(other.as_ref());
             }
         }
